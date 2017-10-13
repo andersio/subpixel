@@ -8,6 +8,7 @@ from utils import pp, visualize, to_json
 import tensorflow as tf
 
 flags = tf.app.flags
+flags.DEFINE_string("metalconv", None, "")
 flags.DEFINE_integer("epoch", 25, "Epoch to train [25]")
 flags.DEFINE_float("learning_rate", 0.0002, "Learning rate of for adam [0.0002]")
 flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
@@ -37,11 +38,14 @@ def main(_):
         else:
             dcgan = DCGAN(sess, image_size=FLAGS.image_size, batch_size=FLAGS.batch_size,
                     dataset_name=FLAGS.dataset, is_crop=FLAGS.is_crop, checkpoint_dir=FLAGS.checkpoint_dir)
-
-        if FLAGS.is_train:
+            
+        if FLAGS.metalconv is None and FLAGS.is_train:
             dcgan.train(FLAGS)
         else:
             dcgan.load(FLAGS.checkpoint_dir)
+
+        if FLAGS.metalconv is not None:
+            dcgan.convertToMPS(FLAGS.metalconv)
 
         if FLAGS.visualize:
             to_json("./web/js/layers.js", [dcgan.h0_w, dcgan.h0_b, dcgan.g_bn0],
