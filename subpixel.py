@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 
-
 def _phase_shift(I, r):
     bsize, a, b, c = I.get_shape().as_list()
     bsize = tf.shape(I)[0] # Handling Dimension(None) type for undefined batch dim

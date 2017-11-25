@@ -86,6 +86,127 @@ class DCGAN(object):
 
         self.saver = tf.train.Saver()
 
+    def infer(self, config):
+        """Inference"""
+
+        # first setup validation data
+        data = sorted(glob(os.path.join("./data", config.infer_dataset, "valid", "*.jpg")))
+
+        tf.initialize_all_variables().run()
+
+        self.saver = tf.train.Saver()
+        self.g_sum = tf.summary.merge([self.G_sum, self.g_loss_sum])
+        self.writer = tf.summary.FileWriter("./logs", self.sess.graph)
+
+        if config.experimental:
+            dataset_id = "expr_" + config.infer_dataset
+
+            sample_files = data[0:self.sample_size]
+            sample = [get_image(sample_file, self.image_size, is_crop=self.is_crop, product_size=self.image_size * 2) for sample_file in sample_files]
+            sample_inputs = [doresize(xx, [self.input_size*2,]*2) for xx in sample]
+            sample_images = np.array(sample).astype(np.float32)
+            sample_input_images = np.array(sample_inputs).astype(np.float32)
+
+            sample_input_images_bucubic = np.array([imresize(img, [self.image_size*2, self.image_size*2]) for img in sample_input_images])
+            print(sample_input_images_bucubic.shape)
+            save_images(sample_input_images_bucubic, [8, 8], './samples/' + dataset_id + '_small_bicubic.png')
+
+            save_images(sample_input_images, [8, 8], './samples/inputs_' + dataset_id + '_small.png')
+            save_images(sample_images, [8, 8], './samples/' + dataset_id + '_reference.png')
+
+            x00 = np.array([i[::2, ::2] for i in sample_inputs])
+            x01 = np.array([i[::2, 1::2] for i in sample_inputs])
+            x10 = np.array([i[1::2, ::2] for i in sample_inputs])
+            x11 = np.array([i[1::2, 1::2] for i in sample_inputs])
+
+            sample_images_x00 = np.array([i[::2, ::2] for i in sample_images])
+            sample_images_x01 = np.array([i[::2, 1::2] for i in sample_images])
+            sample_images_x10 = np.array([i[1::2, ::2] for i in sample_images])
+            sample_images_x11 = np.array([i[1::2, 1::2] for i in sample_images])
+
+            print(np.array(sample).shape)
+            print(x00.shape)
+
+            if self.load(self.checkpoint_dir):
+                print(" [*] Load SUCCESS")
+            else:
+                print(" [!] Load failed...")
+
+            print "Eww"
+
+            samples_x00, g_loss_x00, up_inputs_x00 = self.sess.run(
+                [self.G, self.g_loss, self.up_inputs],
+                feed_dict={self.inputs: x00, self.images: sample_images_x00}
+            )
+            samples_x01, g_loss_x01, up_inputs_x01 = self.sess.run(
+                [self.G, self.g_loss, self.up_inputs],
+                feed_dict={self.inputs: x01, self.images: sample_images_x01}
+            )
+            samples_x10, g_loss_x10, up_inputs_x10 = self.sess.run(
+                [self.G, self.g_loss, self.up_inputs],
+                feed_dict={self.inputs: x10, self.images: sample_images_x10}
+            )
+            samples_x11, g_loss_x11, up_inputs_x11 = self.sess.run(
+                [self.G, self.g_loss, self.up_inputs],
+                feed_dict={self.inputs: x11, self.images: sample_images_x11}
+            )
+
+            avg_loss = (g_loss_x00 + g_loss_x01 + g_loss_x10 + g_loss_x11) / 4.0
+
+            up_inputs = np.zeros((self.sample_size, self.image_size * 2, self.image_size * 2, 3))
+            samples = np.zeros((self.sample_size, self.image_size * 2, self.image_size * 2, 3))
+
+            for sample in xrange(0, self.sample_size):
+                for w_idx in xrange(0, self.image_size):
+                    for h_idx in xrange(0, self.image_size):
+                        up_inputs[sample, w_idx * 2, h_idx * 2] = up_inputs_x00[sample, w_idx, h_idx]
+                        up_inputs[sample, w_idx * 2, h_idx * 2 + 1] = up_inputs_x01[sample, w_idx, h_idx]
+                        up_inputs[sample, w_idx * 2 + 1, h_idx * 2] = up_inputs_x10[sample, w_idx, h_idx]
+                        up_inputs[sample, w_idx * 2 + 1, h_idx * 2 + 1] = up_inputs_x11[sample, w_idx, h_idx]
+                        samples[sample, w_idx * 2, h_idx * 2] = samples_x00[sample, w_idx, h_idx]
+                        samples[sample, w_idx * 2, h_idx * 2 + 1] = samples_x01[sample, w_idx, h_idx]
+                        samples[sample, w_idx * 2 + 1, h_idx * 2] = samples_x10[sample, w_idx, h_idx]
+                        samples[sample, w_idx * 2 + 1, h_idx * 2 + 1] = samples_x11[sample, w_idx, h_idx]
+
+            print(up_inputs.shape)
+
+            save_images(up_inputs, [8, 8], './samples/' + dataset_id + '_inputs.png')
+            save_images(samples, [8, 8],
+                        './samples/' + dataset_id + '_valid.png')
+            print("[Sample] g_loss: %.8f %.8f %.8f %.8f avg %.8f" % (g_loss_x00, g_loss_x01, g_loss_x10, g_loss_x11, avg_loss))
+            return
+        else:
+            print "Eww2"
+
+        dataset_id = "infer_" + config.infer_dataset
+
+        sample_files = data[0:self.sample_size]
+        sample = [get_image(sample_file, self.image_size, is_crop=self.is_crop) for sample_file in sample_files]
+        sample_inputs = [doresize(xx, [self.input_size,]*2) for xx in sample]
+        sample_images = np.array(sample).astype(np.float32)
+        sample_input_images = np.array(sample_inputs).astype(np.float32)
+
+        save_images(sample_input_images, [8, 8], './samples/inputs_' + dataset_id + '_small.png')
+        save_images(sample_images, [8, 8], './samples/' + dataset_id + '_reference.png')
+
+        sample_input_images_bucubic = np.array([imresize(img, [self.image_size, self.image_size]) for img in sample_input_images])
+        print(sample_input_images_bucubic.shape)
+        save_images(sample_input_images_bucubic, [8, 8], './samples/' + dataset_id + '_small_bicubic.png')
+            
+        if self.load(self.checkpoint_dir):
+            print(" [*] Load SUCCESS")
+        else:
+            print(" [!] Load failed...")
+
+        samples, g_loss, up_inputs = self.sess.run(
+            [self.G, self.g_loss, self.up_inputs],
+            feed_dict={self.inputs: sample_input_images, self.images: sample_images}
+        )
+        save_images(up_inputs, [8, 8], './samples/' + dataset_id + '_inputs.png')
+        save_images(samples, [8, 8],
+                    './samples/' + dataset_id + '_valid.png')
+        print("[Sample] g_loss: %.8f" % (g_loss))
+
     def train(self, config):
         """Train DCGAN"""
         # first setup validation data
