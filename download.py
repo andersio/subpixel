@@ -104,14 +104,20 @@ def _list_categories(tag):
     return json.loads(f.read())
 
 def _download_lsun(out_dir, category, set_name, tag):
-    url = 'http://lsun.cs.princeton.edu/htbin/download.cgi?tag={tag}' \
-          '&category={category}&set={set_name}'.format(**locals())
-    print(url)
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
     if set_name == 'test':
         out_name = 'test_lmdb.zip'
     else:
         out_name = '{category}_{set_name}_lmdb.zip'.format(**locals())
+
     out_path = os.path.join(out_dir, out_name)
+
+    url = 'http://lsun.cs.princeton.edu/htbin/download.cgi?tag={tag}' \
+          '&category={category}&set={set_name}'.format(**locals())
+    print(url)
+    print(out_path)
     cmd = ['curl', url, '-o', out_path]
     print('Downloading', category, set_name, 'set')
     subprocess.call(cmd)
@@ -126,12 +132,12 @@ def download_lsun(dirpath):
 
     tag = 'latest'
     #categories = _list_categories(tag)
-    categories = ['bedroom']
+    categories = ['church_outdoor']
 
     for category in categories:
         _download_lsun(data_dir, category, 'train', tag)
         _download_lsun(data_dir, category, 'val', tag)
-    _download_lsun(data_dir, '', 'test', tag)
+        _download_lsun(data_dir, category, 'test', tag)
 
 def download_mnist(dirpath):
     data_dir = os.path.join(dirpath, 'mnist')

@@ -16,8 +16,11 @@ flags.DEFINE_integer("train_size", np.inf, "The size of train images [np.inf]")
 flags.DEFINE_integer("batch_size", 64, "The size of batch images [64]")
 flags.DEFINE_integer("image_size", 128, "The size of image to use (will be center cropped) [108]")
 flags.DEFINE_string("dataset", "celebA", "The name of dataset [celebA, mnist, lsun]")
+flags.DEFINE_string("infer_dataset", "celebA", "The name of dataset [celebA, mnist, lsun]")
 flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
 flags.DEFINE_string("sample_dir", "samples", "Directory name to save the image samples [samples]")
+flags.DEFINE_boolean("is_infer", False, "True for training, False for testing [False]")
+flags.DEFINE_boolean("experimental", False, "True for training, False for testing [False]")
 flags.DEFINE_boolean("is_train", False, "True for training, False for testing [False]")
 flags.DEFINE_boolean("is_crop", False, "True for training, False for testing [False]")
 flags.DEFINE_boolean("visualize", False, "True for visualizing, False for nothing [False]")
@@ -39,7 +42,9 @@ def main(_):
             dcgan = DCGAN(sess, image_size=FLAGS.image_size, batch_size=FLAGS.batch_size,
                     dataset_name=FLAGS.dataset, is_crop=FLAGS.is_crop, checkpoint_dir=FLAGS.checkpoint_dir)
             
-        if FLAGS.metalconv is None and FLAGS.is_train:
+        if FLAGS.is_infer:
+            dcgan.infer(FLAGS)
+        elif FLAGS.metalconv is None and FLAGS.is_train:
             dcgan.train(FLAGS)
         else:
             dcgan.load(FLAGS.checkpoint_dir)
