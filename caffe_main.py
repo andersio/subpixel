@@ -32,13 +32,13 @@ def run_caffe():
 def run_caffe_inference():
     caffe.set_mode_gpu()
     caffe.set_device(0)
-    net = caffe.Net('caffe_subpxconv.prototxt', 'caffe_subpxconv_snapshot_iter_20000.caffemodel', caffe.TEST)
+    net = caffe.Net('caffe_subpxconv.prototxt', 'caffe_subpxconv_snapshot_iter_10000.caffemodel', caffe.TEST)
     net.forward()
     export(net.blobs['tanh1'].data)
     print("Euclidean Loss: %s" % net.blobs['tanh1_loss'].data)
 
 def run_caffe_mps_export():
-    net = caffe.Net('caffe_subpxconv.prototxt', 'caffe_subpxconv_snapshot_iter_20000.caffemodel', caffe.TEST)
+    net = caffe.Net('caffe_subpxconv.prototxt', 'caffe_subpxconv_snapshot_iter_10000.caffemodel', caffe.TEST)
 
     if not os.path.exists(sys.argv[2]):
         os.makedirs(sys.argv[2])
@@ -57,13 +57,16 @@ def run_caffe_mps_export():
     with open(os.path.join(sys.argv[2], 'b_conv3'), 'w') as f:
         f.write(net.params['conv3'][BIAS].data.tobytes())
     with open(os.path.join(sys.argv[2], 'w_conv1'), 'w') as f:
-        w_h0_mps = np.transpose(net.params['conv1'][WEIGHT].data, [0, 2, 3, 1])
+        w_h0_mps = np.transpose(net.params['conv1'][WEIGHT].data, [1, 2, 3, 0])
+        w_h0_mps = np.flip(np.flip(w_h0_mps, axis=1), axis=2)
         f.write(w_h0_mps.tobytes())
     with open(os.path.join(sys.argv[2], 'w_conv2'), 'w') as f:
-        w_h1_mps = np.transpose(net.params['conv2'][WEIGHT].data, [0, 2, 3, 1])
+        w_h1_mps = np.transpose(net.params['conv2'][WEIGHT].data, [1, 2, 3, 0])
+        w_h1_mps = np.flip(np.flip(w_h1_mps, axis=1), axis=2)
         f.write(w_h1_mps.tobytes())
     with open(os.path.join(sys.argv[2], 'w_conv3'), 'w') as f:
-        w_h2_mps = np.transpose(net.params['conv3'][WEIGHT].data, [0, 2, 3, 1])
+        w_h2_mps = np.transpose(net.params['conv3'][WEIGHT].data, [1, 2, 3, 0])
+        w_h2_mps = np.flip(np.flip(w_h2_mps, axis=1), axis=2)
         f.write(w_h2_mps.tobytes())
     with open(os.path.join(sys.argv[2], 'w_conv1_bnns'), 'w') as f:
         w_h0_mps = np.transpose(net.params['conv1'][WEIGHT].data, [3, 2, 1, 0])
@@ -96,7 +99,7 @@ def export(data):
     os.makedirs(export_path)
 
     for idx, img in enumerate(images):
-        img = ((img + 1) * 127.5).astype(np.uint8)
+        img = (img * 255).astype(np.uint8)
         spmisc.imsave(os.path.join(export_path, "%d_2.jpg" % idx), img)
 
     #for idx, img in enumerate(tanh1_img):

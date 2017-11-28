@@ -1,78 +1,10 @@
 name: "SubpixelConv"
-layer {
-    name: "lr_input"
-    type: "Data"
-    top: "lr_input"
-    transform_param {
-        scale: 0.00392156862
-    }
-    data_param {
-        source: "data/celebA/train_lr.lmdb"
-        batch_size: 256
-        backend: LMDB
-    }
-    include {
-        phase: TRAIN
-    }
-}
-layer {
-    name: "lr_input"
-    type: "Data"
-    top: "lr_input"
-    transform_param {
-        scale: 0.00392156862
-    }
-    data_param {
-        source: "data/celebA/test_lr.lmdb"
-        batch_size: 256
-        backend: LMDB
-    }
-    include {
-        phase: TEST
-    }
-}
-layer {
-    name: "hr_ref"
-    type: "Data"
-    top: "hr_ref"
-    transform_param {
-        scale: 0.00392156862
-    }
-    data_param {
-        source: "data/celebA/train_hr.lmdb"
-        batch_size: 256
-        backend: LMDB
-    }
-    include {
-        phase: TRAIN
-    }
-}
-layer {
-    name: "hr_ref"
-    type: "Data"
-    top: "hr_ref"
-    transform_param {
-        scale: 0.00392156862
-    }
-    data_param {
-        source: "data/celebA/test_hr.lmdb"
-        batch_size: 256
-        backend: LMDB
-    }
-    include {
-        phase: TEST
-    }
-}
-layer {
-    name: "hr_ref_unshuffled"
-    type: "Python"
-    top: "hr_ref_unshuffled"
-    bottom: "hr_ref"
-    python_param {
-        module: 'caffe_ps'
-        layer: 'PeriodicUnshufflingLayer'
-        param_str: '{"scale": 4}'
-    }
+input: "lr_input"
+input_shape {
+    dim: 1
+    dim: 3
+    dim: 32
+    dim: 32
 }
 layer {
     name: "conv1"
@@ -157,11 +89,4 @@ layer {
     type: "TanH"
     bottom: "conv3"
     top: "tanh1"
-}
-layer {
-    name: "tanh1_loss"
-    bottom: "tanh1"
-    bottom: "hr_ref_unshuffled"
-    top: "tanh1_loss"
-    type: "EuclideanLoss"
 }

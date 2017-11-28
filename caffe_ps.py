@@ -42,6 +42,6 @@ def unshuffle(instance):
                         y_idx = i * out_c_per_c + ry * 4
                         out[y, x, y_idx:y_idx+scaleFactor] = instance[i, y * scaleFactor + ry, x*scaleFactor:(x+1)*scaleFactor]
 
-    return np.transpose(out, (2, 0, 1)) / 127.5 - 1.0
+    return np.transpose(out, (2, 0, 1))
 
     
