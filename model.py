@@ -321,18 +321,29 @@ class DCGAN(object):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        with open(output_dir + 'b_h0', 'w') as f:
+        # TF ORDERING
+        # (K_Y, K_X, IN, OUT)
+        #
+        # MPS ORDERING
+        #
+        # It is `(IN, K_Y, K_X, OUT)` for MPSCNNConvolutionTranspose, instead of
+        # `(OUT, K_Y, K_X, IN)` which is for MPSCNNConvolution.
+
+        with open(output_dir + 'b_conv1', 'w') as f:
             f.write(self.sess.run(self.h0_b).tobytes())
-        with open(output_dir + 'b_h1', 'w') as f:
+        with open(output_dir + 'b_conv2', 'w') as f:
             f.write(self.sess.run(self.h1_b).tobytes())
-        with open(output_dir + 'b_h2', 'w') as f:
+        with open(output_dir + 'b_conv3', 'w') as f:
             f.write(self.sess.run(self.h2_b).tobytes())
-        with open(output_dir + 'w_h0', 'w') as f:
-            w_h0_mps = tf.transpose(self.h0_w, [3, 0, 1, 2])
+        with open(output_dir + 'w_conv1', 'w') as f:
+            w_h0_mps = tf.transpose(self.h0_w, [2, 0, 1, 3])
+            w_h0_mps = tf.reverse(w_h0_mps, axis=(1, 2))
             f.write(self.sess.run(w_h0_mps).tobytes())
-        with open(output_dir + 'w_h1', 'w') as f:
-            w_h1_mps = tf.transpose(self.h1_w, [3, 0, 1, 2])
+        with open(output_dir + 'w_conv2', 'w') as f:
+            w_h1_mps = tf.transpose(self.h1_w, [2, 0, 1, 3])
+            w_h1_mps = tf.reverse(w_h1_mps, axis=(1, 2))
             f.write(self.sess.run(w_h1_mps).tobytes())
-        with open(output_dir + 'w_h2', 'w') as f:
-            w_h2_mps = tf.transpose(self.h2_w, [3, 0, 1, 2])
+        with open(output_dir + 'w_conv3', 'w') as f:
+            w_h2_mps = tf.transpose(self.h2_w, [2, 0, 1, 3])
+            w_h2_mps = tf.reverse(w_h2_mps, axis=(1, 2))
             f.write(self.sess.run(w_h2_mps).tobytes())

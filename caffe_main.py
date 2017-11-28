@@ -47,7 +47,8 @@ def run_caffe_mps_export():
     BIAS = 1
 
     # Caffe order: Out * In * k_y * k_x
-    # MPS order:   Out * k_y * k_x * In
+    # MPS order:   Out * k_y * k_x * In (MPSCNNConvolution)
+    # MPS order:   In * k_y * k_x * Out (MPSCNNConvolutionTranspose)
     # BNNS order:  k_width * k_height * In * Out
 
     with open(os.path.join(sys.argv[2], 'b_conv1'), 'w') as f:

@@ -95,3 +95,4 @@ logs/
 checkpoint/
 
 .vscode/
+.DS_Store
